@@ -7,6 +7,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 function PlayScreen() {
   const canvasRef = useRef(null);
+  const [maxRounds, setMaxRounds] = useState(3);
+  const [customWordsInput, setCustomWordsInput] = useState("");
   const currentRoomCodeRef = useRef("");
   const [isPainting, setIsPainting] = useState(false);
   const [mousePosition, setMousePosition] = useState(undefined);
@@ -352,7 +354,16 @@ const ENDPOINT_LOCAL =
 
   const handleStartGameClick = () => {
     if (socket) {
-      socket.emit("host-start-game");
+      // Tách chuỗi thành mảng các từ vựng
+      const customWordsArray = customWordsInput
+        .split(",")
+        .map(w => w.trim())
+        .filter(w => w.length > 0);
+
+      socket.emit("host-start-game", {
+        maxRounds: maxRounds,
+        customWords: customWordsArray
+      });
     }
   };
 
@@ -437,13 +448,41 @@ const ENDPOINT_LOCAL =
               }`}
             />
 
-            {/* 🔥 LOBBY PHÒNG CHỜ VỚI NÚT START GAME */}
+            {/* 🔥 LOBBY PHÒNG CHỜ VỚI NÚT START GAME VÀ CÀI ĐẶT */}
             {!gameStarted && (
-              <div className="absolute top-0 left-0 w-full h-full bg-slate-900 bg-opacity-90 flex flex-col justify-center items-center text-white z-20 rounded-lg">
+              <div className="absolute top-0 left-0 w-full h-full bg-slate-900 bg-opacity-95 flex flex-col justify-center items-center text-white z-20 rounded-lg p-6">
                 <h2 className="text-3xl font-extrabold mb-4 text-yellow-400">PHÒNG CHỜ</h2>
-                <p className="text-gray-300 mb-6">Số người chơi trong phòng: {allPlayers.length}/8</p>
+                <p className="text-gray-300 mb-6 font-semibold text-lg">Số người chơi trong phòng: {allPlayers.length}/8</p>
 
                 {socket && socket.id === hostId ? (
+                  <div className="w-full max-w-md bg-slate-800 p-4 rounded-xl mb-6 shadow-lg border border-slate-700">
+                    <label className="block text-sm font-bold mb-2 text-sky-300">
+                      SỐ VÒNG CHƠI (ROUNDS): {maxRounds}
+                    </label>
+                    <input 
+                      type="range" min="1" max="10" value={maxRounds} 
+                      onChange={(e) => setMaxRounds(parseInt(e.target.value))}
+                      className="w-full mb-4 accent-sky-500"
+                    />
+
+                    <label className="block text-sm font-bold mb-2 text-sky-300">
+                      TỪ VỰNG TỰ CHỌN (Cách nhau bằng dấu phẩy)
+                    </label>
+                    <textarea 
+                      value={customWordsInput}
+                      onChange={(e) => setCustomWordsInput(e.target.value)}
+                      placeholder="VD: doraemon, con cua, xe máy..."
+                      className="w-full h-20 p-2 rounded bg-slate-700 text-white placeholder-gray-400 border border-slate-600 focus:outline-none focus:border-sky-500 resize-none text-sm"
+                    />
+                    {/* TODO: [ĐỒNG ĐỘI 3 - CONTENT MODERATOR] Viết logic gọi API check từ cấm vào đây trước khi cho bấm nút bắt đầu */}
+                  </div>
+                ) : (
+                  <div className="w-full max-w-md bg-slate-800 p-6 rounded-xl mb-6 text-center border border-slate-700">
+                    <p className="text-xl animate-pulse text-sky-300 font-bold">Đang chờ Chủ phòng cài đặt trận đấu...</p>
+                  </div>
+                )}
+
+                {socket && socket.id === hostId && (
                   <button
                     onClick={handleStartGameClick}
                     disabled={allPlayers.length < 2}
@@ -455,10 +494,6 @@ const ENDPOINT_LOCAL =
                   >
                     {allPlayers.length >= 2 ? "BẮT ĐẦU TRẬN ĐẤU" : "CẦN TỐI THIỂU 2 NGƯỜI CHƠI..."}
                   </button>
-                ) : (
-                  <div className="text-xl animate-pulse text-sky-300">
-                    Đang chờ Chủ phòng bắt đầu trận đấu...
-                  </div>
                 )}
               </div>
             )}
