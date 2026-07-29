@@ -7,6 +7,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 
 function PlayScreen() {
   const canvasRef = useRef(null);
+  const currentRoomCodeRef = useRef("");
   const [isPainting, setIsPainting] = useState(false);
   const [mousePosition, setMousePosition] = useState(undefined);
   const [color, setColor] = useState("#000000");
@@ -61,7 +62,10 @@ const ENDPOINT_LOCAL =
   useEffect(() => {
     if (!socket) return;
 
-    const handleRoomAssigned = (code) => setCurrentRoomCode(code);
+    const handleRoomAssigned = (code) => {
+  setCurrentRoomCode(code);
+  currentRoomCodeRef.current = code; // 👈 Lưu mã phòng hiện tại vào Ref
+};
     
     const handleUpdatedPlayers = (data) => {
       if (data.players) {
@@ -74,6 +78,7 @@ const ENDPOINT_LOCAL =
 
     const handleSendUserData = () => {
       const roomCodeFromHome =
+        currentRoomCodeRef.current ||
         userDataRecieved.roomCode ||
         userDataRecieved.room ||
         userDataRecieved.code ||
