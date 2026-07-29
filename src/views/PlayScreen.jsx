@@ -37,7 +37,7 @@ function PlayScreen() {
   // Sửa dòng 25: Thay domain Azure App Service Backend của bạn vào đây
 const ENDPOINT_LOCAL =
   process.env.NODE_ENV === "production"
-    ? "skribbl-game-bjc3gwb7dygyg2e2.japaneast-01.azurewebsites.net"
+    ? "https://skribbl-game-bjc3gwb7dygyg2e2.japaneast-01.azurewebsites.net"
     : "http://localhost:3001";
   // 1. Khởi tạo Socket
   useEffect(() => {
