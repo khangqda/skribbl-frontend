@@ -480,16 +480,6 @@ function PlayScreen() {
                       onChange={(e) => setMaxRounds(parseInt(e.target.value))}
                       className="w-full mb-4 accent-sky-500"
                     />
-
-                    <label className="block text-sm font-bold mb-2 text-sky-300">
-                      TỪ VỰNG TỰ CHỌN (Cách nhau bằng dấu phẩy)
-                    </label>
-                    <textarea
-                      value={customWordsInput}
-                      onChange={(e) => setCustomWordsInput(e.target.value)}
-                      placeholder="VD: doraemon, con cua, xe máy..."
-                      className="w-full h-20 p-2 rounded bg-slate-700 text-white placeholder-gray-400 border border-slate-600 focus:outline-none focus:border-sky-500 resize-none text-sm"
-                    />
                   </div>
                 ) : (
                   <div className="w-full max-w-md bg-slate-800 p-6 rounded-xl mb-6 text-center border border-slate-700">
