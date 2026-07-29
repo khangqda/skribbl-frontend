@@ -37,11 +37,12 @@ function PlayScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const userDataRecieved = location.state || {};
-  // Sửa dòng 25: Thay domain Azure App Service Backend của bạn vào đây
-const ENDPOINT_LOCAL =
-  process.env.NODE_ENV === "production"
-    ? "https://skribbl-game-bjc3gwb7dygyg2e2.japaneast-01.azurewebsites.net"
-    : "http://localhost:3001";
+
+  const ENDPOINT_LOCAL =
+    process.env.NODE_ENV === "production"
+      ? "https://skribbl-game-bjc3gwb7dygyg2e2.japaneast-01.azurewebsites.net"
+      : "http://localhost:3001";
+
   // 1. Khởi tạo Socket
   useEffect(() => {
     let us = localStorage.getItem("username");
@@ -65,9 +66,9 @@ const ENDPOINT_LOCAL =
     if (!socket) return;
 
     const handleRoomAssigned = (code) => {
-  setCurrentRoomCode(code);
-  currentRoomCodeRef.current = code; // 👈 Lưu mã phòng hiện tại vào Ref
-};
+      setCurrentRoomCode(code);
+      currentRoomCodeRef.current = code;
+    };
     
     const handleUpdatedPlayers = (data) => {
       if (data.players) {
@@ -176,6 +177,14 @@ const ENDPOINT_LOCAL =
       }
     };
 
+    // 🏆 Hàm nhận Bảng xếp hạng từ Backend
+    const handleGameEndedLeaderboard = (finalPlayers) => {
+      const sortedPlayers = [...finalPlayers].sort((a, b) => b.points - a.points);
+      setLeaderboardData(sortedPlayers);
+      setgameStarted(false);
+    };
+
+    // Bật lắng nghe sự kiện
     socket.on("room-assigned", handleRoomAssigned);
     socket.on("updated-players", handleUpdatedPlayers);
     socket.on("send-user-data", handleSendUserData);
@@ -189,7 +198,9 @@ const ENDPOINT_LOCAL =
     socket.on("start-draw", handleStartDraw);
     socket.on("end-turn", handleEndTurn);
     socket.on("recieve-chat", handleRecieveChat);
+    socket.on("game-ended-leaderboard", handleGameEndedLeaderboard);
 
+    // Tắt lắng nghe khi thoát trang
     return () => {
       socket.off("room-assigned", handleRoomAssigned);
       socket.off("updated-players", handleUpdatedPlayers);
@@ -204,6 +215,7 @@ const ENDPOINT_LOCAL =
       socket.off("start-draw", handleStartDraw);
       socket.off("end-turn", handleEndTurn);
       socket.off("recieve-chat", handleRecieveChat);
+      socket.off("game-ended-leaderboard", handleGameEndedLeaderboard);
     };
   }, [socket]);
 
@@ -354,15 +366,14 @@ const ENDPOINT_LOCAL =
 
   const handleStartGameClick = () => {
     if (socket) {
-      // Tách chuỗi thành mảng các từ vựng
       const customWordsArray = customWordsInput
         .split(",")
-        .map(w => w.trim())
-        .filter(w => w.length > 0);
+        .map((w) => w.trim())
+        .filter((w) => w.length > 0);
 
       socket.emit("host-start-game", {
         maxRounds: maxRounds,
-        customWords: customWordsArray
+        customWords: customWordsArray,
       });
     }
   };
@@ -448,19 +459,24 @@ const ENDPOINT_LOCAL =
               }`}
             />
 
-            {/* 🔥 LOBBY PHÒNG CHỜ VỚI NÚT START GAME VÀ CÀI ĐẶT */}
+            {/* 🔥 LOBBY PHÒNG CHỜ */}
             {!gameStarted && (
               <div className="absolute top-0 left-0 w-full h-full bg-slate-900 bg-opacity-95 flex flex-col justify-center items-center text-white z-20 rounded-lg p-6">
                 <h2 className="text-3xl font-extrabold mb-4 text-yellow-400">PHÒNG CHỜ</h2>
-                <p className="text-gray-300 mb-6 font-semibold text-lg">Số người chơi trong phòng: {allPlayers.length}/8</p>
+                <p className="text-gray-300 mb-6 font-semibold text-lg">
+                  Số người chơi trong phòng: {allPlayers.length}/8
+                </p>
 
                 {socket && socket.id === hostId ? (
                   <div className="w-full max-w-md bg-slate-800 p-4 rounded-xl mb-6 shadow-lg border border-slate-700">
                     <label className="block text-sm font-bold mb-2 text-sky-300">
                       SỐ VÒNG CHƠI (ROUNDS): {maxRounds}
                     </label>
-                    <input 
-                      type="range" min="1" max="10" value={maxRounds} 
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={maxRounds}
                       onChange={(e) => setMaxRounds(parseInt(e.target.value))}
                       className="w-full mb-4 accent-sky-500"
                     />
@@ -468,17 +484,18 @@ const ENDPOINT_LOCAL =
                     <label className="block text-sm font-bold mb-2 text-sky-300">
                       TỪ VỰNG TỰ CHỌN (Cách nhau bằng dấu phẩy)
                     </label>
-                    <textarea 
+                    <textarea
                       value={customWordsInput}
                       onChange={(e) => setCustomWordsInput(e.target.value)}
                       placeholder="VD: doraemon, con cua, xe máy..."
                       className="w-full h-20 p-2 rounded bg-slate-700 text-white placeholder-gray-400 border border-slate-600 focus:outline-none focus:border-sky-500 resize-none text-sm"
                     />
-                    {/* TODO: [ĐỒNG ĐỘI 3 - CONTENT MODERATOR] Viết logic gọi API check từ cấm vào đây trước khi cho bấm nút bắt đầu */}
                   </div>
                 ) : (
                   <div className="w-full max-w-md bg-slate-800 p-6 rounded-xl mb-6 text-center border border-slate-700">
-                    <p className="text-xl animate-pulse text-sky-300 font-bold">Đang chờ Chủ phòng cài đặt trận đấu...</p>
+                    <p className="text-xl animate-pulse text-sky-300 font-bold">
+                      Đang chờ Chủ phòng cài đặt trận đấu...
+                    </p>
                   </div>
                 )}
 
@@ -498,7 +515,7 @@ const ENDPOINT_LOCAL =
               </div>
             )}
 
-            {/* OVERLAY CHỌN TỪ KHAI BẮT ĐẦU LƯỢT */}
+            {/* OVERLAY CHỌN TỪ */}
             <div>
               {showWords && playerDrawing && socket && playerDrawing.id === socket.id && (
                 <div className="absolute top-0 left-0 h-full w-full flex flex-col justify-center items-center z-10 bg-white bg-opacity-95 rounded-lg shadow-2xl border-4 border-sky-300">
@@ -518,18 +535,18 @@ const ENDPOINT_LOCAL =
                   {/* Ô CHO PHÉP TỰ NHẬP TỪ */}
                   <div className="flex items-center gap-3 bg-slate-100 p-4 rounded-xl shadow-inner border border-slate-300">
                     <span className="font-bold text-slate-600">Hoặc tự nhập:</span>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       id="customDrawerWord"
                       placeholder="VD: con chó, hoa sen..."
                       className="px-4 py-2 rounded-lg border-2 border-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-300 outline-none text-black"
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && e.target.value.trim()) {
+                        if (e.key === "Enter" && e.target.value.trim()) {
                           handleWorSelect(e.target.value.trim());
                         }
                       }}
                     />
-                    <button 
+                    <button
                       onClick={() => {
                         const val = document.getElementById("customDrawerWord").value.trim();
                         if (val) handleWorSelect(val);
@@ -637,47 +654,55 @@ const ENDPOINT_LOCAL =
           </div>
         )}
       </div>
-      {/* 🏆 POPUP BẢNG XẾP HẠNG KHI KẾT THÚC GAME */}
-        {leaderboardData && (
-          <div className="absolute top-0 left-0 w-full h-full bg-slate-900 bg-opacity-95 flex flex-col justify-center items-center text-white z-50 rounded-lg p-6">
-            <h2 className="text-5xl font-extrabold mb-8 text-yellow-400 animate-bounce">🏆 KẾT QUẢ TRẬN ĐẤU 🏆</h2>
-            
-            <div className="w-full max-w-md bg-slate-800 rounded-xl p-6 shadow-2xl border-2 border-slate-600 max-h-[60%] overflow-y-auto">
-              {leaderboardData.map((player, index) => {
-                let medal = "🏅";
-                if (index === 0) medal = "🥇";
-                if (index === 1) medal = "🥈";
-                if (index === 2) medal = "🥉";
-                
-                return (
-                  <div key={index} className="flex justify-between items-center p-4 mb-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors border border-slate-500">
-                    <div className="flex items-center gap-4">
-                      <span className="text-3xl">{medal}</span>
-                      <span className="font-bold text-xl">{player.name}</span>
-                    </div>
-                    <span className="font-extrabold text-2xl text-yellow-400">{player.points} pts</span>
-                  </div>
-                );
-              })}
-            </div>
 
-            {socket && socket.id === hostId ? (
-              <button
-                onClick={() => {
-                  setLeaderboardData(null);
-                  socket.emit("return-to-lobby");
-                }}
-                className="mt-8 px-8 py-3 bg-blue-500 hover:bg-blue-600 rounded-full font-bold text-white shadow-lg transition-transform hover:scale-110 text-xl border-2 border-blue-400"
-              >
-                QUAY VỀ PHÒNG CHỜ
-              </button>
-            ) : (
-              <p className="mt-8 text-sky-300 animate-pulse font-bold text-xl">
-                Đang đợi Chủ phòng đưa về sảnh...
-              </p>
-            )}
+      {/* 🏆 POPUP BẢNG XẾP HẠNG KHI KẾT THÚC GAME */}
+      {leaderboardData && (
+        <div className="absolute top-0 left-0 w-full h-full bg-slate-900 bg-opacity-95 flex flex-col justify-center items-center text-white z-50 rounded-lg p-6">
+          <h2 className="text-5xl font-extrabold mb-8 text-yellow-400 animate-bounce">
+            🏆 KẾT QUẢ TRẬN ĐẤU 🏆
+          </h2>
+
+          <div className="w-full max-w-md bg-slate-800 rounded-xl p-6 shadow-2xl border-2 border-slate-600 max-h-[60%] overflow-y-auto">
+            {leaderboardData.map((player, index) => {
+              let medal = "🏅";
+              if (index === 0) medal = "🥇";
+              if (index === 1) medal = "🥈";
+              if (index === 2) medal = "🥉";
+
+              return (
+                <div
+                  key={index}
+                  className="flex justify-between items-center p-4 mb-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors border border-slate-500"
+                >
+                  <div className="flex items-center gap-4">
+                    <span className="text-3xl">{medal}</span>
+                    <span className="font-bold text-xl">{player.name}</span>
+                  </div>
+                  <span className="font-extrabold text-2xl text-yellow-400">
+                    {player.points} pts
+                  </span>
+                </div>
+              );
+            })}
           </div>
-        )}
+
+          {socket && socket.id === hostId ? (
+            <button
+              onClick={() => {
+                setLeaderboardData(null);
+                socket.emit("return-to-lobby");
+              }}
+              className="mt-8 px-8 py-3 bg-blue-500 hover:bg-blue-600 rounded-full font-bold text-white shadow-lg transition-transform hover:scale-110 text-xl border-2 border-blue-400"
+            >
+              QUAY VỀ PHÒNG CHỜ
+            </button>
+          ) : (
+            <p className="mt-8 text-sky-300 animate-pulse font-bold text-xl">
+              Đang đợi Chủ phòng đưa về sảnh...
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
