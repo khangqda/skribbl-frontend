@@ -199,6 +199,12 @@ function PlayScreen() {
     socket.on("end-turn", handleEndTurn);
     socket.on("recieve-chat", handleRecieveChat);
     socket.on("game-ended-leaderboard", handleGameEndedLeaderboard);
+    // ... các lệnh socket.on khác của bạn
+    socket.on("recieve-chat", handleRecieveChat);
+    socket.on("game-ended-leaderboard", handleGameEndedLeaderboard);
+    socket.on("close-leaderboard", () => {
+      setLeaderboardData(null);
+    });
 
     // Tắt lắng nghe khi thoát trang
     return () => {
