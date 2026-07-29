@@ -33,7 +33,7 @@ function PlayScreen() {
   const [guessedWord, setGuessedWord] = useState(false);
   const [currentRoomCode, setCurrentRoomCode] = useState("");
   const [hostId, setHostId] = useState("");
-
+  const [leaderboardData, setLeaderboardData] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const userDataRecieved = location.state || {};
@@ -501,21 +501,49 @@ const ENDPOINT_LOCAL =
             {/* OVERLAY CHỌN TỪ KHAI BẮT ĐẦU LƯỢT */}
             <div>
               {showWords && playerDrawing && socket && playerDrawing.id === socket.id && (
-                <div className="absolute top-0 left-0 h-full w-full flex justify-center gap-10 items-center z-10 bg-white bg-opacity-80">
-                  {words.map((w, idx) => (
-                    <div
-                      onClick={() => handleWorSelect(w)}
-                      key={idx}
-                      className="text-black text-center w-36 h-7 border-2 rounded-md border-black cursor-pointer hover:bg-gray-200"
+                <div className="absolute top-0 left-0 h-full w-full flex flex-col justify-center items-center z-10 bg-white bg-opacity-95 rounded-lg shadow-2xl border-4 border-sky-300">
+                  <h3 className="text-2xl font-extrabold mb-6 text-slate-800">CHỌN 1 TỪ ĐỂ VẼ</h3>
+                  <div className="flex gap-6 mb-8">
+                    {words.map((w, idx) => (
+                      <div
+                        onClick={() => handleWorSelect(w)}
+                        key={idx}
+                        className="text-black text-center font-bold px-6 py-3 text-lg border-2 rounded-xl border-slate-700 cursor-pointer hover:bg-yellow-300 hover:scale-105 transition-all shadow-md"
+                      >
+                        {w}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Ô CHO PHÉP TỰ NHẬP TỪ */}
+                  <div className="flex items-center gap-3 bg-slate-100 p-4 rounded-xl shadow-inner border border-slate-300">
+                    <span className="font-bold text-slate-600">Hoặc tự nhập:</span>
+                    <input 
+                      type="text" 
+                      id="customDrawerWord"
+                      placeholder="VD: con chó, hoa sen..."
+                      className="px-4 py-2 rounded-lg border-2 border-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-300 outline-none text-black"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.target.value.trim()) {
+                          handleWorSelect(e.target.value.trim());
+                        }
+                      }}
+                    />
+                    <button 
+                      onClick={() => {
+                        const val = document.getElementById("customDrawerWord").value.trim();
+                        if (val) handleWorSelect(val);
+                      }}
+                      className="bg-green-500 text-white px-5 py-2 rounded-lg font-bold hover:bg-green-600 shadow-md transition-transform hover:scale-105"
                     >
-                      {w}
-                    </div>
-                  ))}
+                      CHỌN
+                    </button>
+                  </div>
                 </div>
               )}
               {showWords && playerDrawing && socket && playerDrawing.id !== socket.id && (
-                <div className="text-black absolute h-full w-full top-0 left-0 flex justify-center items-center z-10 bg-white bg-opacity-80">
-                  {`${playerDrawing.name} is choosing a word`}
+                <div className="text-xl font-bold text-slate-700 absolute h-full w-full top-0 left-0 flex justify-center items-center z-10 bg-white bg-opacity-90 rounded-lg animate-pulse">
+                  {`${playerDrawing.name} đang chọn từ...`}
                 </div>
               )}
             </div>
@@ -609,6 +637,47 @@ const ENDPOINT_LOCAL =
           </div>
         )}
       </div>
+      {/* 🏆 POPUP BẢNG XẾP HẠNG KHI KẾT THÚC GAME */}
+        {leaderboardData && (
+          <div className="absolute top-0 left-0 w-full h-full bg-slate-900 bg-opacity-95 flex flex-col justify-center items-center text-white z-50 rounded-lg p-6">
+            <h2 className="text-5xl font-extrabold mb-8 text-yellow-400 animate-bounce">🏆 KẾT QUẢ TRẬN ĐẤU 🏆</h2>
+            
+            <div className="w-full max-w-md bg-slate-800 rounded-xl p-6 shadow-2xl border-2 border-slate-600 max-h-[60%] overflow-y-auto">
+              {leaderboardData.map((player, index) => {
+                let medal = "🏅";
+                if (index === 0) medal = "🥇";
+                if (index === 1) medal = "🥈";
+                if (index === 2) medal = "🥉";
+                
+                return (
+                  <div key={index} className="flex justify-between items-center p-4 mb-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors border border-slate-500">
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl">{medal}</span>
+                      <span className="font-bold text-xl">{player.name}</span>
+                    </div>
+                    <span className="font-extrabold text-2xl text-yellow-400">{player.points} pts</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {socket && socket.id === hostId ? (
+              <button
+                onClick={() => {
+                  setLeaderboardData(null);
+                  socket.emit("return-to-lobby");
+                }}
+                className="mt-8 px-8 py-3 bg-blue-500 hover:bg-blue-600 rounded-full font-bold text-white shadow-lg transition-transform hover:scale-110 text-xl border-2 border-blue-400"
+              >
+                QUAY VỀ PHÒNG CHỜ
+              </button>
+            ) : (
+              <p className="mt-8 text-sky-300 animate-pulse font-bold text-xl">
+                Đang đợi Chủ phòng đưa về sảnh...
+              </p>
+            )}
+          </div>
+        )}
     </div>
   );
 }
