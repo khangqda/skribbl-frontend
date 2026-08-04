@@ -17,17 +17,15 @@ jobs:
         with:
           node-version: '22.x'
 
-      # Cài đặt dependency & build (nếu có script build)
       - name: npm install and build
         run: |
           npm install
-          # npm run build --if-present
 
-      # Nén toàn bộ mã nguồn/build thành file release.zip
+      # Nén toàn bộ project thành file release.zip
       - name: Zip artifact for deployment
         run: zip -r release.zip . -x "*.git*"
 
-      # Upload file release.zip lên
+      # Upload file release.zip
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
@@ -39,10 +37,12 @@ jobs:
     needs: build
 
     steps:
+      # Tải file về thư mục hiện tại
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: node-app
+          path: .
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -51,4 +51,4 @@ jobs:
           app-name: 'skribbl-game'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-          package: release.zip
+          package: './release.zip'
