@@ -38,10 +38,8 @@ function PlayScreen() {
   const location = useLocation();
   const userDataRecieved = location.state || {};
 
-  const ENDPOINT_LOCAL =
-    process.env.NODE_ENV === "production"
-      ? "https://skribbl-game-bjc3gwb7dygyg2e2.japaneast-01.azurewebsites.net"
-      : "http://localhost:3001";
+  // ✅ ĐÃ ÉP CỨNG URL BACKEND THẲNG VÀO CODE (Không sợ lỗi process.env nữa)
+  const BACKEND_URL = "https://skribbl-game-bjc3gwb7dygyg2e2.japaneast-01.azurewebsites.net";
 
   // 1. Khởi tạo Socket
   useEffect(() => {
@@ -51,8 +49,7 @@ function PlayScreen() {
       return;
     }
 
-    // ✅ FIX LỖI SOCKET: Đổi polling lên đầu tiên
-    const newSocket = io.connect(ENDPOINT_LOCAL, {
+    const newSocket = io.connect(BACKEND_URL, {
       transports: ["polling", "websocket"],
     });
     setSocket(newSocket);
@@ -379,13 +376,13 @@ function PlayScreen() {
     }
   };
 
-  // ✅ FIX LỖI UPLOAD ANH: Thêm ENDPOINT_LOCAL trước API path
+  // ✅ HÀM LƯU ẢNH BẮN TRỰC TIẾP SANG BACKEND AZURE
   const handleSaveDrawing = async () => {
     if (!canvasRef.current) return;
     const imageBase64 = canvasRef.current.toDataURL("image/png");
 
     try {
-      const response = await fetch(`${ENDPOINT_LOCAL}/api/upload-drawing`, {
+      const response = await fetch(`${BACKEND_URL}/api/upload-drawing`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
