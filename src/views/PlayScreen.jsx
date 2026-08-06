@@ -51,8 +51,9 @@ function PlayScreen() {
       return;
     }
 
+    // ✅ FIX LỖI SOCKET: Đổi polling lên đầu tiên
     const newSocket = io.connect(ENDPOINT_LOCAL, {
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"],
     });
     setSocket(newSocket);
 
@@ -177,14 +178,12 @@ function PlayScreen() {
       }
     };
 
-    // 🏆 Hàm nhận Bảng xếp hạng từ Backend
     const handleGameEndedLeaderboard = (finalPlayers) => {
       const sortedPlayers = [...finalPlayers].sort((a, b) => b.points - a.points);
       setLeaderboardData(sortedPlayers);
       setgameStarted(false);
     };
 
-    // Bật lắng nghe sự kiện
     socket.on("room-assigned", handleRoomAssigned);
     socket.on("updated-players", handleUpdatedPlayers);
     socket.on("send-user-data", handleSendUserData);
@@ -199,14 +198,10 @@ function PlayScreen() {
     socket.on("end-turn", handleEndTurn);
     socket.on("recieve-chat", handleRecieveChat);
     socket.on("game-ended-leaderboard", handleGameEndedLeaderboard);
-    // ... các lệnh socket.on khác của bạn
-    socket.on("recieve-chat", handleRecieveChat);
-    socket.on("game-ended-leaderboard", handleGameEndedLeaderboard);
     socket.on("close-leaderboard", () => {
       setLeaderboardData(null);
     });
 
-    // Tắt lắng nghe khi thoát trang
     return () => {
       socket.off("room-assigned", handleRoomAssigned);
       socket.off("updated-players", handleUpdatedPlayers);
@@ -384,12 +379,13 @@ function PlayScreen() {
     }
   };
 
+  // ✅ FIX LỖI UPLOAD ANH: Thêm ENDPOINT_LOCAL trước API path
   const handleSaveDrawing = async () => {
     if (!canvasRef.current) return;
     const imageBase64 = canvasRef.current.toDataURL("image/png");
 
     try {
-      const response = await fetch("/api/upload-drawing", {
+      const response = await fetch(`${ENDPOINT_LOCAL}/api/upload-drawing`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -465,7 +461,6 @@ function PlayScreen() {
               }`}
             />
 
-            {/* 🔥 LOBBY PHÒNG CHỜ */}
             {!gameStarted && (
               <div className="absolute top-0 left-0 w-full h-full bg-slate-900 bg-opacity-95 flex flex-col justify-center items-center text-white z-20 rounded-lg p-6">
                 <h2 className="text-3xl font-extrabold mb-4 text-yellow-400">PHÒNG CHỜ</h2>
@@ -511,7 +506,6 @@ function PlayScreen() {
               </div>
             )}
 
-            {/* OVERLAY CHỌN TỪ */}
             <div>
               {showWords && playerDrawing && socket && playerDrawing.id === socket.id && (
                 <div className="absolute top-0 left-0 h-full w-full flex flex-col justify-center items-center z-10 bg-white bg-opacity-95 rounded-lg shadow-2xl border-4 border-sky-300">
@@ -528,7 +522,6 @@ function PlayScreen() {
                     ))}
                   </div>
 
-                  {/* Ô CHO PHÉP TỰ NHẬP TỪ */}
                   <div className="flex items-center gap-3 bg-slate-100 p-4 rounded-xl shadow-inner border border-slate-300">
                     <span className="font-bold text-slate-600">Hoặc tự nhập:</span>
                     <input
@@ -651,7 +644,6 @@ function PlayScreen() {
         )}
       </div>
 
-      {/* 🏆 POPUP BẢNG XẾP HẠNG KHI KẾT THÚC GAME */}
       {leaderboardData && (
         <div className="absolute top-0 left-0 w-full h-full bg-slate-900 bg-opacity-95 flex flex-col justify-center items-center text-white z-50 rounded-lg p-6">
           <h2 className="text-5xl font-extrabold mb-8 text-yellow-400 animate-bounce">
