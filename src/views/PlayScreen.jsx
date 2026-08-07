@@ -38,13 +38,10 @@ function PlayScreen() {
   const location = useLocation();
   const userDataRecieved = location.state || {};
 
-  // Azure Web PubSub Endpoint
-  const PUBSUB_URL = "https://skribbl-pubsub.webpubsub.azure.com";
-  
-  // Backend App Service Endpoint (Dùng cho API Upload)
+  // ✅ ĐÚNG: Kết nối tới Backend App Service (Server sẽ làm cầu nối với Azure Web PubSub)
   const BACKEND_URL = "https://skribbl-game-bjc3gwb7dygyg2e2.japaneast-01.azurewebsites.net";
 
-  // 1. Khởi tạo Socket qua Azure Web PubSub
+  // 1. Khởi tạo Socket qua Backend App Service
   useEffect(() => {
     let us = localStorage.getItem("username");
     if (!us || !userDataRecieved.username || !userDataRecieved.avatar) {
@@ -52,9 +49,8 @@ function PlayScreen() {
       return;
     }
 
-    // Kết nối tới Azure Web PubSub Hub
-    const newSocket = io(PUBSUB_URL, {
-      path: "/clients/socketio/hubs/skribblhub",
+    // Kết nối trực tiếp tới Backend URL
+    const newSocket = io(BACKEND_URL, {
       transports: ["websocket", "polling"],
     });
     setSocket(newSocket);
