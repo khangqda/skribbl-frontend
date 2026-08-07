@@ -38,10 +38,13 @@ function PlayScreen() {
   const location = useLocation();
   const userDataRecieved = location.state || {};
 
-  // ✅ ĐÃ ÉP CỨNG URL BACKEND THẲNG VÀO CODE (Không sợ lỗi process.env nữa)
+  // Azure Web PubSub Endpoint
+  const PUBSUB_URL = "https://skribbl-pubsub.webpubsub.azure.com";
+  
+  // Backend App Service Endpoint (Dùng cho API Upload)
   const BACKEND_URL = "https://skribbl-game-bjc3gwb7dygyg2e2.japaneast-01.azurewebsites.net";
 
-  // 1. Khởi tạo Socket
+  // 1. Khởi tạo Socket qua Azure Web PubSub
   useEffect(() => {
     let us = localStorage.getItem("username");
     if (!us || !userDataRecieved.username || !userDataRecieved.avatar) {
@@ -49,8 +52,10 @@ function PlayScreen() {
       return;
     }
 
-    const newSocket = io.connect(BACKEND_URL, {
-      transports: ["polling", "websocket"],
+    // Kết nối tới Azure Web PubSub Hub
+    const newSocket = io(PUBSUB_URL, {
+      path: "/clients/socketio/hubs/skribblhub",
+      transports: ["websocket", "polling"],
     });
     setSocket(newSocket);
 
@@ -376,7 +381,6 @@ function PlayScreen() {
     }
   };
 
-  // ✅ HÀM LƯU ẢNH BẮN TRỰC TIẾP SANG BACKEND AZURE
   const handleSaveDrawing = async () => {
     if (!canvasRef.current) return;
     const imageBase64 = canvasRef.current.toDataURL("image/png");
@@ -477,6 +481,17 @@ function PlayScreen() {
                       value={maxRounds}
                       onChange={(e) => setMaxRounds(parseInt(e.target.value))}
                       className="w-full mb-4 accent-sky-500"
+                    />
+
+                    <label className="block text-sm font-bold mb-2 text-sky-300">
+                      TỪ KHÓA TỰ ĐỊNH NGHĨA (Cách bởi dấu phẩy):
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="VD: goku, doremon, pikachu..."
+                      value={customWordsInput}
+                      onChange={(e) => setCustomWordsInput(e.target.value)}
+                      className="w-full px-3 py-2 text-black rounded-lg border focus:outline-none"
                     />
                   </div>
                 ) : (
